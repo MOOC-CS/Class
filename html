@@ -1,0 +1,18 @@
+
+
+data <- read.csv("pml-training.csv", na.strings=c("NA",""), strip.white=T)
+
+nTrain <- createDataPartition(final_data$classe, 
+                                   p=0.70, list=FALSE)
+training <- final_data[inTrain,]
+testing <- final_data[-inTrain,]
+
+
+
+tr <- trainControl(allowParallel=TRUE, method="cv", number=4)
+model <- train(classe ~ ., data=training, model="rf", trControl=tr)
+predictions <- predict(model, newdata=testing)
+
+confusionMatrix(testing$classe, predictions)
+
+
