@@ -5,18 +5,25 @@ library(randomForest)
 training <- read.csv("pml-training.csv")
 testing <- read.csv("pml-testing.csv")
 
-Train <- createDataPartition(final_data$classe,  p=0.70, list=FALSE)
-Traingset <- final_data[Train,]
-testingset <- final_data[-Train,]
+Train <- createDataPartition(training$classe,  p=0.70, list=FALSE)
+Traingset <- training[Train,]
+testingset <- training[-Train,]
 
 
 
 model <- train(classe ~ ., data=Traingset, model="rf", trControl=tr)
 predictions <- predict(model, newdata=testing)
+model2 <- train(classe ~ ., data=Traingset, model="dt", trControl=tr)
+predictions2 <- predict(model2, newdata=testing)
+model3 <- train(classe ~ ., data=Traingset, model="knn", trControl=tr)
+predictions3 <- predict(model3, newdata=testing)
 
 confusionMatrix(testingset$classe, predictions)
+confusionMatrix(testingset$classe, predictions2)
+confusionMatrix(testingset$classe, predictions3)
 
 
+Best one:
 Overall Statistics
 
                Accuracy : 0.9986          
