@@ -1,0 +1,51 @@
+#Practical Machine Learning - Data Science Specialization
+
+## Overview
+In this report we create a model based upon some barbell curl sensor data (source: http://groupware.les.inf.puc-rio.br/har) and apply it to some test data to predict whether or not an excercise was performed correctly.
+
+We begin by setting up our environment and reading in our data.
+
+```{r, setup}
+library(caret)
+library(randomForest)
+
+setwd("~/R-DataScience/practicalmachinelearning")
+training <- read.csv("pml-training.csv")
+testing <- read.csv("pml-testing.csv")
+set.seed(12345)
+```
+
+## Data Exploration and Cleaning
+We then examine our data and eliminate variables we will not need as we start with 160 covariates. In examining the data we find a number of columns that describe the data (user, timestamps, etc.) but would not be predictive, these are eliminated. In inspecting the data we find there are a large number of columns which are relatively absent of data. We remove those that have more than 95% NA, and then we use the nearZeroVar function in caret in order to further remove variables that likely have very little impact on prediction. We then split our "training" data into a training set and a set we can use for validation of the model (our test set).   
+
+```{r, dataprep}
+trainingUse <- subset(training,select=-c(X, user_name, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp, new_window, num_window))
+
+trainUse <- trainingUse[, colSums(is.na(trainingUse)) < 0.95*nrow(trainingUse)]
+NZV <- nearZeroVar(trainUse)
+trainUse <- trainUse[, -NZV]
+
+inTr <- createDataPartition(trainUse$classe, p=0.7, list=FALSE)
+trainSet <- trainUse[inTr,]
+testSet <- trainUse[-inTr,]
+```
+## Random Forest Model
+We train a random forest model based on our training set. The random forest method we use includes cross-validation with 5 subsamples to be taken (in the trainControl function). [Note: We have constrained ourselves to 5 subsamples in order to make sure our machine can process this within a realistic time frame :D ]
+```{r, modelrf,cache=TRUE}
+modelRF <- train(classe ~ ., data=trainSet, method="rf", trControl=trainControl(method="cv", number=5))
+```
+
+Next we predict using our test set we set aside for validation of our model. We compare the predicted results with the actual results from our test set and examine the models accuracy. 
+```{r, predrf}
+predictRF <- predict(modelRF, testSet)
+confusionMatrix(testSet$classe, predictRF)$table
+confusionMatrix(testSet$classe, predictRF)$overall
+```
+We find our model provides a good set of predictions for our test set and the stats from the confusion matrix indicates an accuracy of 98.9%. This indicates that we have a very small out of sample error (the error rate on a new set of data - in this case our test set).
+
+## Predict Quiz Results
+Finally, we perform a prediction on the other set of data provided to us to submit for the project quiz. 
+```{r, predquiz}
+predictQuiz <- predict(modelRF, testing)
+predictQuiz
+```
