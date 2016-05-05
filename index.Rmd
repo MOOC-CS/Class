@@ -19,35 +19,33 @@ set.seed(12345)
 ## Looking at Cleaning the Data and splitting the data into training and test
 
 ```
+qt_NA <- apply(training, 2, function(x) { sum(is.na(x)) })
 
-inTrain <- createDataPartition(y=training$classe, p=0.7, list=FALSE)
+training <- subset(training[, which(qt_NA == 0)], 
+                     select=-c(X, user_name, new_window, num_window, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp))
+qt_NA <- apply(testing, 2, function(x) { sum(is.na(x)) })
+
+testing <- subset(testing[, which(qt_NA == 0)], 
+                     select=-c(X, user_name, new_window, num_window, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp))
+
+inTrain <- createDataPartition(y=training$classe, p=0.6, list=FALSE)
 myTraining <- training[inTrain, ]; myTesting <- training[-inTrain, ]
 
 
 
-myTraining <- subset(training,select=-c(X, user_name, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp, new_window, num_window))
-
-train2 <- myTraining[, colSums(is.na(myTraining)) < 0.95*nrow(myTraining)]
-NZV <- nearZeroVar(train2)
-train2 <- train2[, -NZV]
-
-inTr <- createDataPartition(train2$classe, p=0.7, list=FALSE)
-trainSet <- train2[inTrain,]
-testSet <- train2[-inTrain,]
-
 
 ```
 ## Random Forest Model
-Using the Random Forrest ML we create a model using cross valudation. 
+Using the Random Forrest ML we create a model using cross valudation with 5 subsets. 
 ```
-mRF <- train(classe ~ ., data=trainSet, method="rf", trControl=trainControl(method="cv", number=5))
+mRF <- train(classe ~ ., data=training, method="rf", trControl=trainControl(method="cv", number=5))
 ```
 
 This will run the model on the test set
 ```
-predictRF <- predict(mRF, testSet)
-confusionMatrix(testSet$classe, predictRF)$table
-confusionMatrix(testSet$classe, predictRF)$overall
+predictRF <- predict(mRF, testing)
+confusionMatrix(testing$classe, predictRF)$table
+confusionMatrix(testing$classe, predictRF)$overall
 ```
 
 
