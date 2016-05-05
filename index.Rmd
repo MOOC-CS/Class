@@ -28,7 +28,7 @@ myTraining <- training[inTrain, ]; myTesting <- training[-inTrain, ]
 myTraining <- subset(training,select=-c(X, user_name, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp, new_window, num_window))
 
 train2 <- myTraining[, colSums(is.na(myTraining)) < 0.95*nrow(myTraining)]
-NZV <- nearZeroVar(trainUse)
+NZV <- nearZeroVar(train2)
 train2 <- train2[, -NZV]
 
 inTr <- createDataPartition(train2$classe, p=0.7, list=FALSE)
