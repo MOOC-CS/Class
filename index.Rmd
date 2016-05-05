@@ -1,7 +1,7 @@
 #Practical Machine Learning - Data Science Specialization
 
 ## Overview
-In this report we create a model based upon some barbell curl sensor data (source: http://groupware.les.inf.puc-rio.br/har) and apply it to some test data to predict whether or not an excercise was performed correctly.
+In this report we create a model based upon sensor data and apply it to some test data to predict whether or not an excercise was performed correctly.
 
 We begin by setting up our environment and reading in our data.
 
