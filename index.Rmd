@@ -3,49 +3,67 @@
 ## Overview
 In this report we create a model based upon sensor data and apply it to some test data to predict whether or not an excercise was performed correctly.
 
-We begin by setting up our environment and reading in our data.
+Get the data
 
 ```{r, setup}
 library(caret)
 library(randomForest)
 
-setwd("~/R-DataScience/practicalmachinelearning")
-training <- read.csv("pml-training.csv")
-testing <- read.csv("pml-testing.csv")
+trainUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+training <- read.csv(url(trainUrl), na.strings=c("NA","#DIV/0!",""))
+testing <- read.csv(url(testUrl), na.strings=c("NA","#DIV/0!",""))
 set.seed(12345)
 ```
 
-## Data Exploration and Cleaning
-We then examine our data and eliminate variables we will not need as we start with 160 covariates. In examining the data we find a number of columns that describe the data (user, timestamps, etc.) but would not be predictive, these are eliminated. In inspecting the data we find there are a large number of columns which are relatively absent of data. We remove those that have more than 95% NA, and then we use the nearZeroVar function in caret in order to further remove variables that likely have very little impact on prediction. We then split our "training" data into a training set and a set we can use for validation of the model (our test set).   
+## Looking at Cleaning the Data and splitting the data into training and test
 
-```{r, dataprep}
-trainingUse <- subset(training,select=-c(X, user_name, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp, new_window, num_window))
+```
 
-trainUse <- trainingUse[, colSums(is.na(trainingUse)) < 0.95*nrow(trainingUse)]
+inTrain <- createDataPartition(y=training$classe, p=0.7, list=FALSE)
+myTraining <- training[inTrain, ]; myTesting <- training[-inTrain, ]
+
+
+
+{r, dataprep}
+myTraining <- subset(training,select=-c(X, user_name, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp, new_window, num_window))
+
+train2 <- myTraining[, colSums(is.na(myTraining)) < 0.95*nrow(myTraining)]
 NZV <- nearZeroVar(trainUse)
-trainUse <- trainUse[, -NZV]
+train2 <- train2[, -NZV]
 
-inTr <- createDataPartition(trainUse$classe, p=0.7, list=FALSE)
-trainSet <- trainUse[inTr,]
-testSet <- trainUse[-inTr,]
+inTr <- createDataPartition(train2$classe, p=0.7, list=FALSE)
+trainSet <- train2[inTrain,]
+testSet <- train2[-inTrain,]
+
+
 ```
 ## Random Forest Model
-We train a random forest model based on our training set. The random forest method we use includes cross-validation with 5 subsamples to be taken (in the trainControl function). [Note: We have constrained ourselves to 5 subsamples in order to make sure our machine can process this within a realistic time frame :D ]
+Using the Random Forrest ML we create a model using cross valudation. 
 ```{r, modelrf,cache=TRUE}
-modelRF <- train(classe ~ ., data=trainSet, method="rf", trControl=trainControl(method="cv", number=5))
+RF <- train(classe ~ ., data=trainSet, method="rf", trControl=trainControl(method="cv", number=5))
 ```
 
-Next we predict using our test set we set aside for validation of our model. We compare the predicted results with the actual results from our test set and examine the models accuracy. 
+This will run the model on the test set
 ```{r, predrf}
 predictRF <- predict(modelRF, testSet)
 confusionMatrix(testSet$classe, predictRF)$table
 confusionMatrix(testSet$classe, predictRF)$overall
 ```
-We find our model provides a good set of predictions for our test set and the stats from the confusion matrix indicates an accuracy of 98.9%. This indicates that we have a very small out of sample error (the error rate on a new set of data - in this case our test set).
 
-## Predict Quiz Results
-Finally, we perform a prediction on the other set of data provided to us to submit for the project quiz. 
-```{r, predquiz}
-predictQuiz <- predict(modelRF, testing)
-predictQuiz
-```
+
+Overall Statistics
+
+           Accuracy : 0.9986          
+             95% CI : (0.9975, 0.9993)
+No Information Rate : 0.2845          
+P-Value [Acc > NIR] : < 2.2e-16       
+
+              Kappa : 0.9982          
+Mcnemar's Test P-Value : NA
+
+The test set was used to help predict the out of sample error rate. This is expected to be below 1%, or 100%-99.86%. 
+
+
+I also tried decision trees, SVM, PCA, random forests. Random forests had the best sensitivity which is what is valued in the biomedical field. This data was cleaned and The statistics for the random forest can be seen above. One idea I also tried was to run random forrest, SVM, and Decision Tree on the data individually and then have the computer check if they all agree. If not go with the most common answer. This ensemble method ended up being slower and not better than the simple random forest.
+
