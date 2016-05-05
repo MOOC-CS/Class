@@ -5,7 +5,7 @@ In this report we create a model based upon sensor data and apply it to some tes
 
 Get the data
 
-```{r, setup}
+```
 library(caret)
 library(randomForest)
 
@@ -25,7 +25,6 @@ myTraining <- training[inTrain, ]; myTesting <- training[-inTrain, ]
 
 
 
-{r, dataprep}
 myTraining <- subset(training,select=-c(X, user_name, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp, new_window, num_window))
 
 train2 <- myTraining[, colSums(is.na(myTraining)) < 0.95*nrow(myTraining)]
@@ -40,13 +39,13 @@ testSet <- train2[-inTrain,]
 ```
 ## Random Forest Model
 Using the Random Forrest ML we create a model using cross valudation. 
-```{r, modelrf,cache=TRUE}
-RF <- train(classe ~ ., data=trainSet, method="rf", trControl=trainControl(method="cv", number=5))
+```
+mRF <- train(classe ~ ., data=trainSet, method="rf", trControl=trainControl(method="cv", number=5))
 ```
 
 This will run the model on the test set
-```{r, predrf}
-predictRF <- predict(modelRF, testSet)
+```
+predictRF <- predict(mRF, testSet)
 confusionMatrix(testSet$classe, predictRF)$table
 confusionMatrix(testSet$classe, predictRF)$overall
 ```
